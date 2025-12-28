@@ -1,10 +1,11 @@
 package com.example.backend.model;
 
 import com.example.backend.status.AssignmentStatus;
+import com.example.backend.status.AssignmentType;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +26,7 @@ public class Assignment {
     private Integer id;
 
     @Column(name = "title", nullable = false, unique = true)
-    @NotEmpty(message = "Assignment Title is required")
+    @NotBlank(message = "Assignment Title is required")
     private String title;
 
     @Column(name = "due_date", nullable = false)
@@ -36,6 +37,11 @@ public class Assignment {
     @NotNull(message = "Assignment status is required")
     @Enumerated(value = EnumType.STRING)
     private AssignmentStatus status;
+
+    @Column(name = "type", nullable = false)
+    @NotNull(message = "Assignment type is required")
+    @Enumerated(value = EnumType.STRING)
+    private AssignmentType type;
 
     @Column(name = "grade")
     @Min(value = 0, message = "Grade cannot be negative")

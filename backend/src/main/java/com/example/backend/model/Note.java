@@ -2,6 +2,7 @@ package com.example.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,11 +23,11 @@ public class Note {
     private Integer id;
 
     @Column(name = "title", nullable = false, unique = true)
-    @NotEmpty(message = "Note title is required")
+    @NotBlank(message = "Note title is required")
     private String title;
 
     @Column(name = "content", nullable = false)
-    @NotEmpty(message = "Note content is required")
+    @NotBlank(message = "Note content is required")
     private String content;
 
     @Column(name = "created_at", nullable = false, updatable = false)

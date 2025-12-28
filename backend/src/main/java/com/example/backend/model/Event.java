@@ -1,6 +1,7 @@
 package com.example.backend.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -22,15 +23,15 @@ public class Event {
     private Integer id;
 
     @Column(name = "title", nullable = false, unique = true)
-    @NotEmpty(message = "Event title is required")
+    @NotBlank(message = "Event title is required")
     private String title;
 
     @Column(name = "description", nullable = false)
-    @NotEmpty(message = "Event description is required")
+    @NotBlank(message = "Event description is required")
     private String description;
 
     @Column(name = "location", nullable = false)
-    @NotEmpty(message = "Location is required")
+    @NotBlank(message = "Location is required")
     private String location;
 
     @Column(name = "date", nullable = false)
