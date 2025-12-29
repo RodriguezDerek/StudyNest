@@ -2,16 +2,13 @@ package com.example.backend.controller;
 
 import com.example.backend.dto.courses.CourseDTO;
 import com.example.backend.dto.GenericResponseDTO;
-import com.example.backend.dto.courses.CreateCourseRequestDTO;
+import com.example.backend.dto.courses.CourseRequestDTO;
 import com.example.backend.service.CourseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -23,25 +20,27 @@ public class CourseController {
     private final CourseService courseService;
 
     @PostMapping("/courses")
-    public ResponseEntity<GenericResponseDTO> createCourse(@Valid @RequestBody CreateCourseRequestDTO request) {
+    public ResponseEntity<GenericResponseDTO> createCourse(@Valid @RequestBody CourseRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(courseService.createCourse(request));
     }
 
+    @GetMapping("/courses")
     public ResponseEntity<List<CourseDTO>> getAllCourses() {
-        return null;
+        return ResponseEntity.status(HttpStatus.OK).body(courseService.getAllCourses());
     }
 
-    public ResponseEntity<List<CourseDTO>> getCoursesByTerm() {
-        return null;
+    @GetMapping("/courses/semester")
+    public ResponseEntity<List<CourseDTO>> getCoursesBySemester(@RequestParam String semester) {
+        return ResponseEntity.status(HttpStatus.OK).body(courseService.getCoursesBySemester(semester));
     }
 
-    public ResponseEntity<GenericResponseDTO> updateCourse() {
-        return null;
+    @PutMapping("/courses/{id}")
+    public ResponseEntity<GenericResponseDTO> updateCourse(@PathVariable Integer id, @Valid @RequestBody CourseRequestDTO request) {
+        return ResponseEntity.status(HttpStatus.OK).body(courseService.updateCourse(id, request));
     }
 
-    public ResponseEntity<GenericResponseDTO> deleteCourse() {
-        return null;
+    @DeleteMapping("/courses/{id}")
+    public ResponseEntity<GenericResponseDTO> deleteCourse(@PathVariable Integer id) {
+        return ResponseEntity.status(HttpStatus.OK).body(courseService.deleteCourse(id));
     }
-
-
 }

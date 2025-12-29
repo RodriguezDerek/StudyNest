@@ -13,7 +13,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateCourseRequestDTO {
+public class CourseRequestDTO {
     @NotBlank(message = "Course name is required")
     @Size(max = 100, message = "Course name cannot exceed 100 characters")
     private String courseName;

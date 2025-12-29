@@ -3,23 +3,24 @@ package com.example.backend.service;
 import com.example.backend.dto.GenericResponseDTO;
 import com.example.backend.dto.courses.CourseDTO;
 import com.example.backend.dto.courses.CourseMeetingDTO;
-import com.example.backend.dto.courses.CreateCourseRequestDTO;
+import com.example.backend.dto.courses.CourseRequestDTO;
 import com.example.backend.exception.CourseExistsException;
+import com.example.backend.exception.CourseNotFoundException;
 import com.example.backend.exception.InvalidDayOfWeekException;
 import com.example.backend.model.Course;
 import com.example.backend.model.CourseMeeting;
 import com.example.backend.repository.CourseMeetingRepository;
 import com.example.backend.repository.CourseRepository;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,17 +29,13 @@ public class CourseService {
     private final CourseRepository courseRepository;
     private final CourseMeetingRepository courseMeetingRepository;
 
-    public GenericResponseDTO createCourse(CreateCourseRequestDTO request) {
+    public GenericResponseDTO createCourse(CourseRequestDTO request) {
         if (courseRepository.findByName(request.getCourseName()).isPresent() || courseRepository.findByCourseCode(request.getCourseCode()).isPresent()) {
             throw new CourseExistsException("A course with the same name or code already exists.");
         }
 
         List<String> courseDays = request.getCourseDays();
-        for (String day : courseDays) {
-            if (!Set.of("MON","TUE","WED","THU","FRI","SAT","SUN").contains(day.toUpperCase())) {
-                throw new InvalidDayOfWeekException("Course meeting day '" + day + "' is not valid.");
-            }
-        }
+        checkCourseDays(courseDays);
 
         Course course = Course.builder()
                 .name(request.getCourseName())
@@ -71,6 +68,114 @@ public class CourseService {
                 .status(HttpStatus.CREATED.value())
                 .timeStamp(LocalDateTime.now())
                 .build();
+    }
+
+    public List<CourseDTO> getAllCourses() {
+        return courseRepository.findAll().stream().map(this::toCourseDTO).toList();
+    }
+
+    public List<CourseDTO> getCoursesBySemester(String semester) {
+        return courseRepository.findAllBySemester(semester).stream().map(this::toCourseDTO).toList();
+    }
+
+    public GenericResponseDTO updateCourse(Integer id, CourseRequestDTO request) {
+        Optional<Course> optionalCourse = courseRepository.findById(id);
+
+        if (optionalCourse.isEmpty()) {
+            throw new CourseNotFoundException("Course with id not found");
+        }
+
+        List<String> courseDays = request.getCourseDays();
+        checkCourseDays(courseDays);
+
+        if (courseRepository.existsByNameAndIdNot(request.getCourseName(), id) || courseRepository.existsByCourseCodeAndIdNot(request.getCourseCode(), id)) {
+            throw new CourseExistsException("Course with name or code already exists");
+        }
+
+        Course course = optionalCourse.get();
+
+        // If nothing changed, skip update
+        if (isCourseAndMeetingsUnchanged(course, request, courseDays)) {
+            return GenericResponseDTO.builder()
+                    .message("No changes detected. Course not updated.")
+                    .status(HttpStatus.OK.value())
+                    .timeStamp(LocalDateTime.now())
+                    .build();
+        }
+
+        course.setName(request.getCourseName());
+        course.setCourseCode(request.getCourseCode());
+        course.setRoomCode(request.getCourseRoomCode());
+        course.setLocation(request.getCourseLocation());
+        course.setProfessorName(request.getCourseProfessor());
+        course.setProfessorEmail(request.getCourseProfessorEmail());
+        course.setDepartment(request.getCourseDepartment());
+        course.setSemester(request.getCourseSemester());
+
+        courseRepository.save(course);
+
+        course.getCourseMeetings().clear();
+
+        for (String day : courseDays) {
+            DayOfWeek dayOfWeek = DayOfWeek.valueOf(day.toUpperCase().strip());
+
+            CourseMeeting courseMeeting = CourseMeeting.builder()
+                    .course(course)
+                    .dayOfWeek(dayOfWeek)
+                    .startTime(request.getStartTime())
+                    .endTime(request.getEndTime())
+                    .build();
+
+            courseMeetingRepository.save(courseMeeting);
+        }
+
+        return GenericResponseDTO.builder()
+                .message("Course updated successfully")
+                .status(HttpStatus.OK.value())
+                .timeStamp(LocalDateTime.now())
+                .build();
+    }
+
+    public GenericResponseDTO deleteCourse(Integer id) {
+        return GenericResponseDTO.builder().build();
+    }
+
+    private static boolean isCourseAndMeetingsUnchanged(Course course, CourseRequestDTO request, List<String> courseDays) {
+        // Check if Course fields are unchanged
+        boolean isCourseUnchanged = course.getName().equals(request.getCourseName()) &&
+                course.getCourseCode().equals(request.getCourseCode()) &&
+                course.getRoomCode().equals(request.getCourseRoomCode()) &&
+                course.getLocation().equals(request.getCourseLocation()) &&
+                course.getProfessorName().equals(request.getCourseProfessor()) &&
+                course.getProfessorEmail().equals(request.getCourseProfessorEmail()) &&
+                course.getDepartment().equals(request.getCourseDepartment()) &&
+                course.getSemester().equals(request.getCourseSemester());
+
+        // Check if CourseMeeting fields are unchanged
+        Set<DayOfWeek> existingDays = course.getCourseMeetings().stream()
+                .map(CourseMeeting::getDayOfWeek)
+                .collect(Collectors.toSet());
+
+        Set<DayOfWeek> requestDays = courseDays.stream()
+                .map(String::toUpperCase)
+                .map(DayOfWeek::valueOf)
+                .collect(Collectors.toSet());
+
+        boolean areMeetingsUnchanged = existingDays.equals(requestDays) &&
+                course.getCourseMeetings().stream()
+                        .allMatch(m -> m.getStartTime().equals(request.getStartTime())
+                                && m.getEndTime().equals(request.getEndTime()));
+
+        return isCourseUnchanged && areMeetingsUnchanged;
+    }
+
+    private static void checkCourseDays(List<String> courseDays) {
+        Set<String> validDays = Set.of("MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY", "SUNDAY");
+        for (String day : courseDays) {
+            if (!validDays.contains(day.toUpperCase())) {
+                throw new InvalidDayOfWeekException("Course meeting day '" + day + "' is not valid.");
+            }
+        }
     }
 
     public CourseDTO toCourseDTO(Course course) {
