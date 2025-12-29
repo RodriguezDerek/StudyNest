@@ -95,7 +95,7 @@ public class CourseService {
         Course course = optionalCourse.get();
 
         // If nothing changed, skip update
-        if (isCourseAndMeetingsUnchanged(course, request, courseDays)) {
+        if (isCourseDataUnChanged(course, request) && isCourseMeetingsDataUnChanged(course, request, courseDays)) {
             return GenericResponseDTO.builder()
                     .message("No changes detected. Course not updated.")
                     .status(HttpStatus.OK.value())
@@ -114,19 +114,21 @@ public class CourseService {
 
         courseRepository.save(course);
 
-        course.getCourseMeetings().clear();
+        if (!isCourseMeetingsDataUnChanged(course, request, courseDays)) {
+            course.getCourseMeetings().clear();
 
-        for (String day : courseDays) {
-            DayOfWeek dayOfWeek = DayOfWeek.valueOf(day.toUpperCase().strip());
+            for (String day : courseDays) {
+                DayOfWeek dayOfWeek = DayOfWeek.valueOf(day.toUpperCase().strip());
 
-            CourseMeeting courseMeeting = CourseMeeting.builder()
-                    .course(course)
-                    .dayOfWeek(dayOfWeek)
-                    .startTime(request.getStartTime())
-                    .endTime(request.getEndTime())
-                    .build();
+                CourseMeeting courseMeeting = CourseMeeting.builder()
+                        .course(course)
+                        .dayOfWeek(dayOfWeek)
+                        .startTime(request.getStartTime())
+                        .endTime(request.getEndTime())
+                        .build();
 
-            courseMeetingRepository.save(courseMeeting);
+                courseMeetingRepository.save(courseMeeting);
+            }
         }
 
         return GenericResponseDTO.builder()
@@ -137,20 +139,20 @@ public class CourseService {
     }
 
     public GenericResponseDTO deleteCourse(Integer id) {
-        return GenericResponseDTO.builder().build();
+        if (courseRepository.findById(id).isEmpty()) {
+            throw new CourseNotFoundException("Course with id not found");
+        }
+
+        courseRepository.deleteById(id);
+
+        return GenericResponseDTO.builder()
+                .message("Course deleted successfully")
+                .status(HttpStatus.OK.value())
+                .timeStamp(LocalDateTime.now())
+                .build();
     }
 
-    private static boolean isCourseAndMeetingsUnchanged(Course course, CourseRequestDTO request, List<String> courseDays) {
-        // Check if Course fields are unchanged
-        boolean isCourseUnchanged = course.getName().equals(request.getCourseName()) &&
-                course.getCourseCode().equals(request.getCourseCode()) &&
-                course.getRoomCode().equals(request.getCourseRoomCode()) &&
-                course.getLocation().equals(request.getCourseLocation()) &&
-                course.getProfessorName().equals(request.getCourseProfessor()) &&
-                course.getProfessorEmail().equals(request.getCourseProfessorEmail()) &&
-                course.getDepartment().equals(request.getCourseDepartment()) &&
-                course.getSemester().equals(request.getCourseSemester());
-
+    private static boolean isCourseMeetingsDataUnChanged(Course course, CourseRequestDTO request, List<String> courseDays) {
         // Check if CourseMeeting fields are unchanged
         Set<DayOfWeek> existingDays = course.getCourseMeetings().stream()
                 .map(CourseMeeting::getDayOfWeek)
@@ -161,12 +163,20 @@ public class CourseService {
                 .map(DayOfWeek::valueOf)
                 .collect(Collectors.toSet());
 
-        boolean areMeetingsUnchanged = existingDays.equals(requestDays) &&
-                course.getCourseMeetings().stream()
-                        .allMatch(m -> m.getStartTime().equals(request.getStartTime())
-                                && m.getEndTime().equals(request.getEndTime()));
+        return existingDays.equals(requestDays) && course.getCourseMeetings().stream()
+                .allMatch(m -> m.getStartTime().equals(request.getStartTime()) && m.getEndTime().equals(request.getEndTime()));
+    }
 
-        return isCourseUnchanged && areMeetingsUnchanged;
+    private static boolean isCourseDataUnChanged(Course course, CourseRequestDTO request) {
+        // Check if Course fields are unchanged
+        return course.getName().equals(request.getCourseName()) &&
+                course.getCourseCode().equals(request.getCourseCode()) &&
+                course.getRoomCode().equals(request.getCourseRoomCode()) &&
+                course.getLocation().equals(request.getCourseLocation()) &&
+                course.getProfessorName().equals(request.getCourseProfessor()) &&
+                course.getProfessorEmail().equals(request.getCourseProfessorEmail()) &&
+                course.getDepartment().equals(request.getCourseDepartment()) &&
+                course.getSemester().equals(request.getCourseSemester());
     }
 
     private static void checkCourseDays(List<String> courseDays) {
