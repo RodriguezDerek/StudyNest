@@ -60,7 +60,7 @@ public class Assignment {
         this.createdAt = LocalDateTime.now();
 
         if (this.status == null) {
-            this.status = AssignmentStatus.IN_PROGRESS;
+            this.status = AssignmentStatus.NOT_STARTED;
         }
 
         if (this.grade == null) {

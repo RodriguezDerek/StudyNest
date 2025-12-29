@@ -13,33 +13,33 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/v1/course")
+@RequestMapping("api/v1/courses")
 @RequiredArgsConstructor
 public class CourseController {
 
     private final CourseService courseService;
 
-    @PostMapping("/courses")
+    @PostMapping("/course")
     public ResponseEntity<GenericResponseDTO> createCourse(@Valid @RequestBody CourseRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(courseService.createCourse(request));
     }
 
-    @GetMapping("/courses")
+    @GetMapping
     public ResponseEntity<List<CourseDTO>> getAllCourses() {
         return ResponseEntity.status(HttpStatus.OK).body(courseService.getAllCourses());
     }
 
-    @GetMapping("/courses/semester")
+    @GetMapping("/semester")
     public ResponseEntity<List<CourseDTO>> getCoursesBySemester(@RequestParam String semester) {
         return ResponseEntity.status(HttpStatus.OK).body(courseService.getCoursesBySemester(semester));
     }
 
-    @PutMapping("/courses/{id}")
+    @PutMapping("/course/{id}")
     public ResponseEntity<GenericResponseDTO> updateCourse(@PathVariable Integer id, @Valid @RequestBody CourseRequestDTO request) {
         return ResponseEntity.status(HttpStatus.OK).body(courseService.updateCourse(id, request));
     }
 
-    @DeleteMapping("/courses/{id}")
+    @DeleteMapping("/course/{id}")
     public ResponseEntity<GenericResponseDTO> deleteCourse(@PathVariable Integer id) {
         return ResponseEntity.status(HttpStatus.OK).body(courseService.deleteCourse(id));
     }
