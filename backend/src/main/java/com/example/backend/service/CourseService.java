@@ -9,8 +9,10 @@ import com.example.backend.exception.CourseNotFoundException;
 import com.example.backend.exception.InvalidDayOfWeekException;
 import com.example.backend.model.Course;
 import com.example.backend.model.CourseMeeting;
+import com.example.backend.repository.AssignmentRepository;
 import com.example.backend.repository.CourseMeetingRepository;
 import com.example.backend.repository.CourseRepository;
+import com.example.backend.status.AssignmentStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,9 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
     private final CourseMeetingRepository courseMeetingRepository;
+    private final AssignmentRepository assignmentRepository;
+    private final AssignmentService assignmentService;
+    private final NoteService noteService;
 
     public GenericResponseDTO createCourse(CourseRequestDTO request) {
         if (courseRepository.findByName(request.getCourseName()).isPresent() || courseRepository.findByCourseCode(request.getCourseCode()).isPresent()) {
@@ -168,7 +173,6 @@ public class CourseService {
     }
 
     private static boolean isCourseDataUnChanged(Course course, CourseRequestDTO request) {
-        // Check if Course fields are unchanged
         return course.getName().equals(request.getCourseName()) &&
                 course.getCourseCode().equals(request.getCourseCode()) &&
                 course.getRoomCode().equals(request.getCourseRoomCode()) &&
@@ -189,6 +193,13 @@ public class CourseService {
     }
 
     public CourseDTO toCourseDTO(Course course) {
+        long completed = assignmentRepository.countByCourseIdAndStatus(course.getId(), AssignmentStatus.COMPLETED);
+        long inProgress = assignmentRepository.countByCourseIdAndStatus(course.getId(), AssignmentStatus.IN_PROGRESS);
+        long notStarted = assignmentRepository.countByCourseIdAndStatus(course.getId(), AssignmentStatus.NOT_STARTED);
+
+        long total = completed + inProgress + notStarted;
+        double progressPercent = total == 0 ? 0.0 : (double) (completed * 100) / total;
+
         return CourseDTO.builder()
                 .id(course.getId())
                 .name(course.getName())
@@ -199,9 +210,13 @@ public class CourseService {
                 .professorEmail(course.getProfessorEmail())
                 .department(course.getDepartment())
                 .semester(course.getSemester())
-                .assignments(course.getAssignments().stream().map(AssignmentService::toAssignmentDTO).toList())
-                .notes(course.getNotes().stream().map(NoteService::toNoteDTO).toList())
+                .notes(course.getNotes().stream().map(noteService::toNoteDTO).toList())
                 .courseMeetings(course.getCourseMeetings().stream().map(this::toCourseMeetingDTO).toList())
+                .assignments(course.getAssignments().stream().map(assignmentService::toAssignmentDTO).toList())
+                .completedAssignments(completed)
+                .inProgressAssignments(inProgress)
+                .notStartedAssignments(notStarted)
+                .progressPercent(progressPercent)
                 .build();
     }
 
