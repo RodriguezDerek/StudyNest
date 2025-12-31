@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class NoteService {
 
-    public static NoteDTO toNoteDTO(Note note) {
+    public NoteDTO toNoteDTO(Note note) {
         return NoteDTO.builder()
                 .id(note.getId())
                 .courseId(note.getCourse().getId())
