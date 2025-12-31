@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 public class AssignmentDTO {
     private Integer id;
     private Integer courseId;
-    private String title;
+    private String name;
     private LocalDateTime dueDate;
     private AssignmentStatus status;
     private AssignmentType type;

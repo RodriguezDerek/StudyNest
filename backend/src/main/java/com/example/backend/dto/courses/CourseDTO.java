@@ -23,7 +23,11 @@ public class CourseDTO {
     private String professorEmail;
     private String department;
     private String semester;
-    private List<AssignmentDTO> assignments;
     private List<NoteDTO> notes;
     private List<CourseMeetingDTO> courseMeetings;
+    private List<AssignmentDTO> assignments;
+    private long completedAssignments;
+    private long inProgressAssignments;
+    private long notStartedAssignments;
+    private double progressPercent;
 }

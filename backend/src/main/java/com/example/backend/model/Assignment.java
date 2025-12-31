@@ -25,9 +25,9 @@ public class Assignment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "title", nullable = false, unique = true)
+    @Column(name = "title", nullable = false)
     @NotBlank(message = "Assignment Title is required")
-    private String title;
+    private String name;
 
     @Column(name = "due_date", nullable = false)
     @NotNull(message = "Assignment due date is required")
