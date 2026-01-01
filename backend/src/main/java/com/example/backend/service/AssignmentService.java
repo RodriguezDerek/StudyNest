@@ -3,8 +3,10 @@ package com.example.backend.service;
 import com.example.backend.dto.GenericResponseDTO;
 import com.example.backend.dto.assignments.AssignmentDTO;
 import com.example.backend.dto.assignments.AssignmentRequestDTO;
+import com.example.backend.dto.assignments.LatestAssignmentDTO;
 import com.example.backend.dto.assignments.TotalAssignmentCountDTO;
 import com.example.backend.exception.AssignmentExistsException;
+import com.example.backend.exception.AssignmentNotFoundException;
 import com.example.backend.exception.CourseNotFoundException;
 import com.example.backend.model.Assignment;
 import com.example.backend.model.Course;
@@ -16,7 +18,11 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Optional;
 
@@ -65,6 +71,28 @@ public class AssignmentService {
                 .homeworkCount(assignmentRepository.countByType(AssignmentType.HOMEWORK))
                 .labCount(assignmentRepository.countByType(AssignmentType.LAB))
                 .quizCount(assignmentRepository.countByType(AssignmentType.QUIZ))
+                .build();
+    }
+
+    public List<AssignmentDTO> getAssignmentsThisWeek() {
+        LocalDateTime startOfWeek = LocalDateTime.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).toLocalDate().atStartOfDay();
+        LocalDateTime endOfWeek = LocalDateTime.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY)).toLocalDate().atTime(23, 59, 59, 999_999_999);
+        return assignmentRepository.findByDueDateBetween(startOfWeek, endOfWeek).stream().map(this::toAssignmentDTO).toList();
+    }
+    public LatestAssignmentDTO getLatestAssignment() {
+        Optional<Assignment> optionalAssignment = assignmentRepository.findFirstByOrderByCreatedAtDesc();
+
+        if (optionalAssignment.isEmpty()) {
+            throw new AssignmentNotFoundException("There are no assignments");
+        }
+
+        Assignment assignment = optionalAssignment.get();
+
+        return LatestAssignmentDTO.builder()
+                .assignmentName(assignment.getName())
+                .dueDate(assignment.getDueDate())
+                .courseCode(assignment.getCourse().getCourseCode())
+                .courseProfessor(assignment.getCourse().getProfessorName())
                 .build();
     }
 

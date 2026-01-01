@@ -3,6 +3,7 @@ package com.example.backend.controller;
 import com.example.backend.dto.GenericResponseDTO;
 import com.example.backend.dto.assignments.AssignmentDTO;
 import com.example.backend.dto.assignments.AssignmentRequestDTO;
+import com.example.backend.dto.assignments.LatestAssignmentDTO;
 import com.example.backend.dto.assignments.TotalAssignmentCountDTO;
 import com.example.backend.service.AssignmentService;
 import jakarta.validation.Valid;
@@ -36,13 +37,13 @@ public class AssignmentController {
     }
 
     @GetMapping("/week")
-    public ResponseEntity<?> getAssignmentsThisWeek() {
-        return null;
+    public ResponseEntity<List<AssignmentDTO>> getAssignmentsThisWeek() {
+        return ResponseEntity.status(HttpStatus.OK).body(assignmentService.getAssignmentsThisWeek());
     }
 
     @GetMapping("/assignment/latest")
-    public ResponseEntity<?> getLatestAssignment() {
-        return null;
+    public ResponseEntity<LatestAssignmentDTO> getLatestAssignment() {
+        return ResponseEntity.status(HttpStatus.OK).body(assignmentService.getLatestAssignment());
     }
 
     @PutMapping("/assignment/{courseId}")

@@ -62,6 +62,17 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleAssignmentExistsException(AssignmentExistsException ex) {
         return ErrorResponse.builder()
                 .message(ex.getMessage())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @ExceptionHandler(AssignmentNotFoundException.class)
+    @ResponseBody
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleAssignmentNotFoundException(AssignmentNotFoundException ex) {
+        return ErrorResponse.builder()
+                .message(ex.getMessage())
                 .status(HttpStatus.NOT_FOUND.value())
                 .timestamp(LocalDateTime.now())
                 .build();
