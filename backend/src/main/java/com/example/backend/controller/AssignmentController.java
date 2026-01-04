@@ -46,13 +46,13 @@ public class AssignmentController {
         return ResponseEntity.status(HttpStatus.OK).body(assignmentService.getLatestAssignment());
     }
 
-    @PutMapping("/assignment/{courseId}")
-    public ResponseEntity<?> updateAssignment() {
-        return null;
+    @PutMapping("/assignment/{assignmentId}")
+    public ResponseEntity<?> updateAssignment(@PathVariable Integer assignmentId, @Valid @RequestBody AssignmentRequestDTO request) {
+        return ResponseEntity.status(HttpStatus.OK).body(assignmentService.updateAssignment(assignmentId, request));
     }
 
-    @DeleteMapping("/assignment/{courseId}")
-    public ResponseEntity<?> deleteAssignment() {
-        return null;
+    @DeleteMapping("/assignment/{assignmentId}")
+    public ResponseEntity<?> deleteAssignment(@PathVariable Integer assignmentId) {
+        return ResponseEntity.status(HttpStatus.OK).body(assignmentService.deleteAssignment(assignmentId));
     }
 }

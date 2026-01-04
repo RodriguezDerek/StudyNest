@@ -14,14 +14,11 @@ import com.example.backend.repository.AssignmentRepository;
 import com.example.backend.repository.CourseRepository;
 import com.example.backend.status.AssignmentType;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Optional;
@@ -96,6 +93,46 @@ public class AssignmentService {
                 .build();
     }
 
+    public GenericResponseDTO updateAssignment(Integer assignmentId, AssignmentRequestDTO request) {
+        Optional<Assignment> optionalAssignment = assignmentRepository.findById(assignmentId);
+
+        if (optionalAssignment.isEmpty()) {
+            throw new AssignmentNotFoundException("Assignment not found");
+        }
+
+        if (assignmentRepository.existsByNameAndIdNot(request.getAssignmentName(), assignmentId)) {
+            throw new AssignmentExistsException("Assignment with that name already exists");
+        }
+
+        Assignment assignment = optionalAssignment.get();
+
+        if (isAssignmentDataUnchanged(assignment, request)) {
+            return GenericResponseDTO.builder()
+                    .message("No changes detected. Assignment not updated.")
+                    .status(HttpStatus.OK.value())
+                    .timeStamp(LocalDateTime.now())
+                    .build();
+        }
+
+        assignment.setName(request.getAssignmentName());
+        assignment.setDueDate(request.getDueDate());
+        assignment.setStatus(request.getStatus());
+        assignment.setType(request.getType());
+        assignment.setGrade(request.getGrade());
+
+        assignmentRepository.save(assignment);
+
+        return GenericResponseDTO.builder()
+                .message("Assignment updated successfully")
+                .status(HttpStatus.OK.value())
+                .timeStamp(LocalDateTime.now())
+                .build();
+    }
+
+    public GenericResponseDTO deleteAssignment(Integer assignmentId) {
+        return null;
+    }
+
     public AssignmentDTO toAssignmentDTO(Assignment assignment) {
         return AssignmentDTO.builder()
                 .id(assignment.getId())
@@ -106,5 +143,13 @@ public class AssignmentService {
                 .type(assignment.getType())
                 .grade(assignment.getGrade())
                 .build();
+    }
+
+    public boolean isAssignmentDataUnchanged(Assignment assignment, AssignmentRequestDTO request) {
+        return assignment.getName().equals(request.getAssignmentName()) &&
+            assignment.getDueDate().equals(request.getDueDate()) &&
+                assignment.getStatus().equals(request.getStatus()) &&
+                assignment.getType().equals(request.getType()) &&
+                assignment.getGrade().equals(request.getGrade());
     }
 }
